@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>EXTECH Master - Chief V22.4 (K-Plus Edition)</title>
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chief Master">
+<meta name="theme-color" content="#0f172a">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
+<style>
+    :root { --ex-blue: #0056b3; --ex-dark: #0f172a; --ex-green: #10b981; --ex-red: #ef4444; --kp-green: #2fb35d; }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Inter', 'Noto Sans Myanmar', sans-serif; background: #f1f5f9; padding-bottom: 30px; color: #1e293b; }
+    
+    /* K-PLUS STYLE PIN SCREEN */
+    #lockScreen { position: fixed; inset: 0; background: radial-gradient(circle at center, #1a2e25 0%, #0f172a 100%); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+    .pin-dots { display: flex; gap: 20px; margin: 40px 0; }
+    .dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); transition: 0.2s; }
+    .dot.active { background: var(--kp-green); border-color: var(--kp-green); box-shadow: 0 0 15px var(--kp-green); }
+    .keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; }
+    .key { width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; font-weight: 500; cursor: pointer; transition: 0.1s; }
+    .key:active { background: var(--kp-green); border-color: var(--kp-green); color: white; transform: scale(0.9); }
+    .pin-label { font-weight: 400; font-size: 0.9rem; color: #94a3b8; letter-spacing: 1px; margin-bottom: 10px; }
+
+    /* Global UI (Original Code) */
+    .sidebar { position: fixed; top: 0; left: -280px; width: 280px; height: 100vh; background: var(--ex-dark); color: white; z-index: 2000; transition: 0.3s; }
+    .sidebar.active { left: 0; }
+    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; z-index: 1500; backdrop-filter: blur(3px); }
+    .overlay.active { display: block; }
+    .nav-item { padding: 18px 25px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: 600; }
+    .nav-item.active { background: var(--ex-blue); }
+    .top-bar { height: 60px; background: white; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; padding: 0 20px; position: sticky; top: 0; z-index: 1000; justify-content: space-between; }
+    .menu-trigger { display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; font-weight: 800; color: var(--ex-dark); font-size: 1rem; }
+    .content { padding: 15px; max-width: 1200px; margin: 0 auto; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
+    
+    .card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 15px; border: 1px solid #e2e8f0; }
+    .profile-card { background: white; border-radius: 20px; padding: 20px; text-align: center; margin-bottom: 15px; border: 1px solid #e2e8f0; }
+    .profile-img { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid var(--ex-blue); background: #eee; }
+    .stat-card { background: white; padding: 18px; border-radius: 16px; border: 1px solid #e2e8f0; border-left: 5px solid var(--ex-blue); position: relative; margin-bottom: 15px; }
+    .stat-val { font-size: 1.7rem; font-weight: 800; color: var(--ex-dark); }
+    .ss-input { width: 85px; padding: 8px; border: 2px solid #cbd5e1; border-radius: 8px; font-weight: 800; text-align: center; color: var(--ex-red); font-size: 1rem; }
+    .eye-btn { border: none; background: none; opacity: 0.4; padding: 5px; cursor: pointer; font-size: 1.1rem; }
+
+    /* HISTORY STYLES */
+    .hist-item { background: white; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 12px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+    .hist-header { padding: 18px; cursor: pointer; display: flex; flex-direction: column; gap: 8px; transition: 0.2s; }
+    .hist-header-top { display: flex; justify-content: space-between; align-items: center; }
+    .hist-month { font-weight: 800; font-size: 1.1rem; color: var(--ex-dark); }
+    .hist-net { font-weight: 800; font-size: 1.2rem; color: var(--ex-green); }
+    .hist-stats { display: flex; gap: 10px; }
+    .mini-badge { font-size: 0.65rem; font-weight: 800; padding: 3px 8px; border-radius: 5px; background: #f1f5f9; color: #64748b; text-transform: uppercase; }
+    .hist-details { display: none; padding: 5px 15px 15px 15px; background: #fcfcfc; border-top: 1px solid #f1f5f9; }
+    .hist-item.active .hist-details { display: block; }
+    .day-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: white; border-radius: 10px; margin-top: 8px; border: 1px solid #f1f5f9; }
+    .day-date { font-weight: 700; font-size: 0.85rem; width: 100px; }
+    .day-info { flex: 1; font-size: 0.8rem; color: #64748b; }
+    .day-val { font-weight: 800; font-size: 0.9rem; color: var(--ex-dark); text-align: right; }
+    .sun-tag { color: var(--ex-red); font-size: 0.7rem; font-weight: 900; margin-left: 5px; }
+
+    /* Inputs & Buttons */
+    .field label { display: block; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; color: #64748b; }
+    .field input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.9rem; font-family: inherit; outline: none; }
+    .btn-save { width: 100%; padding: 16px; background: var(--ex-blue); color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; }
+    .table-container { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 300px; }
+    th { text-align: left; padding: 10px; font-size: 0.65rem; color: #94a3b8; border-bottom: 1px solid #e2e8f0; }
+    td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 0.8rem; }
+    .backup-section { margin-top: auto; padding: 20px; background: rgba(0,0,0,0.2); }
+    .btn-backup { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: transparent; color: white; cursor: pointer; font-size: 0.75rem; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div id="lockScreen">
+    <div style="font-weight: 800; font-size: 1.4rem; color: var(--kp-green); margin-bottom: 5px;">K+</div>
+    <div class="pin-label">ENTER PIN</div>
+    <div class="pin-dots" id="pinDots">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div>
+    </div>
+    <div class="keypad">
+        <div class="key" onclick="pressKey('1')">1</div><div class="key" onclick="pressKey('2')">2</div><div class="key" onclick="pressKey('3')">3</div>
+        <div class="key" onclick="pressKey('4')">4</div><div class="key" onclick="pressKey('5')">5</div><div class="key" onclick="pressKey('6')">6</div>
+        <div class="key" onclick="pressKey('7')">7</div><div class="key" onclick="pressKey('8')">8</div><div class="key" onclick="pressKey('9')">9</div>
+        <div class="key" onclick="forgetPin()" style="font-size: 0.6rem; color: #64748b; border:none; background:none;">FORGET</div>
+        <div class="key" onclick="pressKey('0')">0</div>
+        <div class="key" onclick="pressKey('DEL')" style="font-size: 1.2rem; border:none; background:none;">⌫</div>
+    </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+<aside class="sidebar" id="sidebar">
+    <div style="padding: 25px; font-weight: 800; color: var(--kp-green); border-bottom: 1px solid rgba(255,255,255,0.1);">CHIEF MASTER V22.4</div>
+    <nav>
+        <div class="nav-item active" onclick="switchTab('dashboard', this)">📊 Dashboard</div>
+        <div class="nav-item" onclick="switchTab('add', this)">📝 Add Record & Data</div>
+        <div class="nav-item" onclick="switchTab('history', this)">📅 History Archive</div>
+        <div class="nav-item" onclick="switchTab('settings', this)">⚙️ PIN Settings</div>
+    </nav>
+    <div class="backup-section">
+        <button class="btn-backup" onclick="exportData()">📥 Backup to Downloads</button>
+        <button class="btn-backup" onclick="importData()">📤 Restore from File</button>
+    </div>
+</aside>
+
+<main>
+    <div class="top-bar">
+        <button class="menu-trigger" onclick="toggleMenu()"><span>☰</span> <span>MENU</span></button>
+        <input type="month" id="globalMonth" onchange="renderAll()" style="border:1px solid #cbd5e1; padding:6px 10px; border-radius:8px; font-weight:800;">
+    </div>
+
+    <div class="content">
+        <div id="dashboard" class="tab-content active">
+            <div class="profile-card">
+                <div style="position:relative; width:90px; margin:0 auto;">
+                    <img id="profileDisplay" src="https://via.placeholder.com/90" class="profile-img">
+                    <label style="position:absolute; bottom:0; right:0; background:var(--ex-blue); color:white; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid white; font-size:12px;">📷<input type="file" hidden onchange="uploadPhoto(this)"></label>
+                </div>
+                <div class="profile-name">MR. THINGYAN PHYO</div>
+                <div style="display:inline-block; margin-top:8px; background:rgba(0, 86, 179, 0.08); color:var(--ex-blue); padding:5px 15px; border-radius:50px; font-size:0.75rem; font-weight:800; text-transform:uppercase;">Chief Parameter</div>
+            </div>
+
+            <div class="stat-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:0.7rem; font-weight:700; color:#64748b;">၂၀ ရက်နေ့ ထုတ်လစာ (၁-၁၅)</div>
+                    <button class="eye-btn" onclick="toggleDashboardPriv('s1Total')">👁️</button>
+                </div>
+                <div class="stat-val" id="s1Total" data-val="0">••••••</div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-top:8px;"><span id="s1Days">0 ရက်</span><span id="s1Sun" style="color:var(--ex-red)">0 ပိတ်ရက်</span></div>
+            </div>
+
+            <div class="stat-card" style="border-left-color:var(--ex-green);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <div style="font-size:0.7rem; font-weight:700; color:#64748b;">၅ ရက်နေ့ စုစုပေါင်း (Net Pay)</div>
+                            <button class="eye-btn" onclick="toggleDashboardPriv('s2Total')">👁️</button>
+                        </div>
+                        <div class="stat-val" id="s2Total" data-val="0" style="color:var(--ex-green);">••••••</div>
+                    </div>
+                    <div><label style="font-size:0.6rem; font-weight:800; color:var(--ex-red);">လူမှုဖူလုံရေး</label><br>
+                    <input type="number" id="ssValue" class="ss-input" placeholder="0" oninput="saveSSMonthly()"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-top:8px;"><span id="s2Gross">Gross: 0 ฿</span><span id="s2SunWorked">Worked Sun: 0 ရက်</span></div>
+            </div>
+        </div>
+
+        <div id="add" class="tab-content">
+            <div class="card">
+                <div class="field" style="margin-bottom:12px;"><label>ရက်စွဲ</label><input type="date" id="fDate"></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <div class="field"><label>နေ့တွက်နှုန်း</label><input type="number" id="rateNormal" value="372"></div>
+                    <div class="field"><label>အိုတီနှုန်း</label><input type="number" id="rateOT" value="69"></div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
+                    <div class="field"><label>IN</label><input type="time" id="fIn" value="08:00"></div>
+                    <div class="field"><label>OUT</label><input type="time" id="fOut" value="17:00"></div>
+                    <div class="field"><label>OT OUT</label><input type="time" id="fOtOut" value="20:00"></div>
+                </div>
+                <div class="field" style="margin-bottom:15px;"><label>မှတ်စု (Note)</label><input type="text" id="fNote" placeholder="ဥပမာ- အစိုးရရုံးပိတ်ရက်"></div>
+                <button class="btn-save" id="saveBtn" onclick="saveRecord()">SAVE DATA</button>
+            </div>
+            <div class="card">
+                <h3 style="font-size:0.8rem; color:var(--ex-blue); margin-bottom:10px;">DAILY DATA RECORDS</h3>
+                <div class="table-container"><table><thead><tr><th>DATE</th><th>SHF</th><th>OT</th><th>PAY</th><th style="text-align:right;">ACT</th></tr></thead><tbody id="quickBody"></tbody></table></div>
+            </div>
+        </div>
+
+        <div id="history" class="tab-content">
+            <h3 style="font-weight:800; color:var(--ex-dark); margin-bottom:15px; font-size:1rem;">📅 Monthly History Archive</h3>
+            <div id="historyList"></div>
+        </div>
+
+        <div id="settings" class="tab-content">
+            <div class="card">
+                <h3 style="margin-bottom:15px; font-size:1rem;">Change PIN Security</h3>
+                <div class="field"><label>PIN အဟောင်း ထည့်ပါ</label><input type="password" id="oldPinInput" maxlength="6"></div>
+                <div class="field"><label>PIN အသစ် ထည့်ပါ (၆ လုံး)</label><input type="password" id="newPinInput" maxlength="6"></div>
+                <button class="btn-save" onclick="updatePin()" style="background:var(--ex-dark);">UPDATE PIN</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const MASTER_KEY = 'EXTECH_CHIEF_V21_MASTER';
+    const SS_KEY = 'EXTECH_CHIEF_SS_V21';
+    const PIN_KEY = 'EXTECH_CHIEF_PIN_LOCK';
+    let db = JSON.parse(localStorage.getItem(MASTER_KEY)) || [];
+    let ssDb = JSON.parse(localStorage.getItem(SS_KEY)) || {};
+    let currentPin = localStorage.getItem(PIN_KEY) || "123456";
+    let inputPin = "";
+
+    function pressKey(num) {
+        if(num === 'DEL') inputPin = inputPin.slice(0, -1);
+        else if(inputPin.length < 6) inputPin += num;
+        const dots = document.querySelectorAll('.dot');
+        dots.forEach((dot, i) => i < inputPin.length ? dot.classList.add('active') : dot.classList.remove('active'));
+        if(inputPin.length === 6) {
+            if(inputPin === currentPin) { document.getElementById('lockScreen').style.display = 'none'; } 
+            else { alert("PIN မှားနေပါတယ် Chief!"); inputPin = ""; dots.forEach(d => d.classList.remove('active')); }
+        }
+    }
+    function forgetPin() { if(confirm("PIN Reset လုပ်ရန် Backup ဖိုင်ကို Restore လုပ်ပေးရပါမယ်။ ဆက်လုပ်မလား Chief?")) { importData(); } }
+    function updatePin() {
+        const op = document.getElementById('oldPinInput').value;
+        const np = document.getElementById('newPinInput').value;
+        if(op !== currentPin) return alert("PIN အဟောင်း မှားနေပါတယ်!");
+        if(np.length !== 6) return alert("PIN အသစ် ၆ လုံး ထည့်ပေးပါ!");
+        currentPin = np; localStorage.setItem(PIN_KEY, np); alert("PIN ပြောင်းလဲမှု အောင်မြင်ပါတယ်!"); location.reload();
+    }
+    function toggleDashboardPriv(id) {
+        const el = document.getElementById(id);
+        const actualVal = el.getAttribute('data-val');
+        if(el.innerText.includes('•')) { el.innerText = actualVal + " ฿"; } 
+        else { el.innerText = "••••••"; }
+    }
+
+    function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
+    function switchTab(id, el) { document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); if(el) el.classList.add('active'); toggleMenu(); }
+
+    function saveSSMonthly() {
+        const month = document.getElementById('globalMonth').value;
+        const val = parseFloat(document.getElementById('ssValue').value) || 0;
+        ssDb[month] = val; localStorage.setItem(SS_KEY, JSON.stringify(ssDb)); renderAll();
+    }
+
+    function saveRecord() {
+        const date = document.getElementById('fDate').value; if(!date) return;
+        const rNormal = 372, rOT = 69;
+        const tIn = document.getElementById('fIn').value, tOut = document.getElementById('fOut').value, tOtOut = document.getElementById('fOtOut').value;
+        const note = document.getElementById('fNote').value || "";
+        const isSun = new Date(date).getDay() === 0;
+        let otH = 0;
+        if(tOtOut && tOtOut !== "00:00") {
+            const os = new Date(`2026-01-01 ${tOut}`); let oe = new Date(`2026-01-01 ${tOtOut}`);
+            if(oe < os) oe.setDate(oe.getDate() + 1); otH = (oe - os) / 3600000;
+        }
+        let shiftIcon = "🌙"; if(tIn) { const h = parseInt(tIn.split(':')[0]); if(h >= 6 && h <= 12) shiftIcon = "☀️"; }
+        let pay = isSun ? (rNormal * 2) : (note.includes("အစိုးရရုံးပိတ်ရက်") ? rNormal : (rNormal + (otH * rOT)));
+        if(!tIn || tIn === "00:00") pay = note.includes("အစိုးရရုံးပိတ်ရက်") ? rNormal : 0;
+        const newData = { date, shift: shiftIcon, otH: isSun ? 0 : otH, pay, note, isSun };
+        const existingIdx = db.findIndex(r => r.date === date);
+        if(existingIdx > -1) db[existingIdx] = newData; else db.push(newData);
+        localStorage.setItem(MASTER_KEY, JSON.stringify(db)); renderAll();
+        const btn = document.getElementById('saveBtn'); btn.innerText = "✅ SAVED"; setTimeout(() => btn.innerText = "SAVE DATA", 1000);
+    }
+
+    function renderAll() {
+        const selMonth = document.getElementById('globalMonth').value;
+        const rNormal = 372; const ssDeduct = ssDb[selMonth] || 0;
+        document.getElementById('ssValue').value = ssDeduct === 0 ? '' : ssDeduct;
+        const [y, m] = selMonth.split('-').map(Number);
+        const filtered = db.filter(r => r.date.startsWith(selMonth));
+        let s1WD = 0, s1Sun = 0; for(let d=1; d<=15; d++) { if(new Date(y, m-1, d).getDay() === 0) s1Sun++; else s1WD++; }
+        document.getElementById('s1Total').setAttribute('data-val', (s1WD * rNormal).toLocaleString());
+        document.getElementById('s1Days').innerText = s1WD + " ရက်";
+        document.getElementById('s1Sun').innerText = s1Sun + " ပိတ်ရက်";
+        let s2NM = 0, lastD = new Date(y, m, 0).getDate(); for(let d=16; d<=lastD; d++) if(new Date(y, m-1, d).getDay() !== 0) s2NM += rNormal;
+        let s2OB = 0, workedSun = 0;
+        filtered.forEach(rec => { if(rec.isSun) { if(rec.pay > 0) workedSun++; s2OB += rec.pay; } else if(rec.note.includes("အစိုးရရုံးပိတ်ရက်")) { if(parseInt(rec.date.split('-')[2]) <= 15) s2OB += rec.pay; } else s2OB += (rec.pay - rNormal); });
+        document.getElementById('s2Total').setAttribute('data-val', (s2NM + s2OB - ssDeduct).toLocaleString());
+        document.getElementById('s2Gross').innerText = `Gross: ${Math.round(s2NM + s2OB).toLocaleString()} ฿`;
+        document.getElementById('s2SunWorked').innerText = `Worked Sun: ${workedSun} ရက်`;
+        const qBody = document.getElementById('quickBody'); qBody.innerHTML = '';
+        filtered.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(r => { qBody.innerHTML += `<tr><td>${r.date} ${r.isSun?'<b style="color:red">S</b>':''}</td><td>${r.shift}</td><td>${r.otH}h</td><td>฿${Math.round(r.pay)}</td><td style="text-align:right;"><span onclick="deleteData('${r.date}')" style="cursor:pointer; color:red;">❌</span></td></tr>`; });
+        renderRefinedHistory(rNormal);
+    }
+
+    function renderRefinedHistory(rNormal) {
+        const list = document.getElementById('historyList'); list.innerHTML = '';
+        const months = [...new Set(db.map(r => r.date.substring(0, 7)))].sort().reverse();
+        months.forEach(month => {
+            const [y, m] = month.split('-').map(Number);
+            const items = db.filter(r => r.date.startsWith(month)).sort((a,b) => new Date(a.date) - new Date(b.date));
+            const ssForMonth = ssDb[month] || 0;
+            let s1WD = 0; for(let d=1; d<=15; d++) if(new Date(y, m-1, d).getDay() !== 0) s1WD++;
+            let s2NM = 0, lastD = new Date(y, m, 0).getDate(); for(let d=16; d<=lastD; d++) if(new Date(y, m-1, d).getDay() !== 0) s2NM += rNormal;
+            let s2OB = 0, wSun = 0, totOT = 0;
+            items.forEach(r => { totOT += r.otH; if(r.isSun && r.pay > 0) wSun++; if(r.isSun) s2OB += r.pay; else if(r.note.includes("အစိုးရရုံးပိတ်ရက်") && parseInt(r.date.split('-')[2]) <= 15) s2OB += r.pay; else s2OB += (r.pay - rNormal); });
+            const net = (s1WD * rNormal) + s2NM + s2OB - ssForMonth;
+            const item = document.createElement('div'); item.className = 'hist-item';
+            item.innerHTML = `<div class="hist-header" onclick="this.parentElement.classList.toggle('active')"><div class="hist-header-top"><span class="hist-month">${month}</span><span class="hist-net">฿${net.toLocaleString()}</span></div><div class="hist-stats"><span class="mini-badge">OT: ${totOT.toFixed(1)}h</span><span class="mini-badge">Sun Work: ${wSun}d</span><span class="mini-badge" style="color:var(--ex-red)">SS: -${ssForMonth}</span></div></div><div class="hist-details"><div style="border-top:1px solid #f1f5f9; margin-top:5px; padding-top:5px;">${items.map(r => `<div class="day-row"><div class="day-date">${r.date.split('-')[2]} ${r.isSun?'<span class="sun-tag">SUN</span>':''}</div><div class="day-info">${r.otH > 0 ? 'OT: '+r.otH+'h' : (r.note || 'Normal')}</div><div class="day-val">฿${Math.round(r.pay)}</div><div onclick="deleteData('${r.date}')" style="margin-left:10px; color:#cbd5e1; font-size:0.7rem;">✕</div></div>`).join('')}</div></div>`;
+            list.appendChild(item);
+        });
+    }
+
+    function uploadPhoto(input) { if (input.files && input.files[0]) { const r = new FileReader(); r.onload = e => { document.getElementById('profileDisplay').src = e.target.result; localStorage.setItem('CHIEF_PHOTO_V22', e.target.result); }; r.readAsDataURL(input.files[0]); } }
+    function deleteData(dateStr) { if(confirm("ဖျက်မှာလား Chief?")) { db = db.filter(r => r.date !== dateStr); localStorage.setItem(MASTER_KEY, JSON.stringify(db)); renderAll(); } }
+    
+    // CUSTOM BACKUP NAME FUNCTION
+    function exportData() {
+        let customName = prompt("Backup File အတွက် နာမည်တစ်ခု ပေးပါ Chief (ဥပမာ- MySalary):", "CHIEF_MASTER_BACKUP");
+        if(customName === null) return; // User cancelled
+        if(customName.trim() === "") customName = "CHIEF_MASTER_BACKUP";
+        
+        const blob = new Blob([JSON.stringify({db, ssDb, version:'V22.4'})], {type: 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${customName}_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+    }
+
+    function importData() {
+        const i = document.createElement('input'); i.type = 'file'; i.accept = '.json';
+        i.onchange = e => {
+            const r = new FileReader(); r.onload = ev => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    db = data.db || []; ssDb = data.ssDb || {};
+                    localStorage.setItem(MASTER_KEY, JSON.stringify(db));
+                    localStorage.setItem(SS_KEY, JSON.stringify(ssDb));
+                    localStorage.setItem(PIN_KEY, "123456");
+                    alert("Data Restore & PIN Reset အောင်မြင်ပါတယ်။"); location.reload();
+                } catch(e) { alert("ဖိုင်မှားနေပါတယ် Chief!"); }
+            }; r.readAsText(e.target.files[0]);
+        }; i.click();
+    }
+
+    window.addEventListener('load', () => {
+        const img = localStorage.getItem('CHIEF_PHOTO_V22'); if(img) document.getElementById('profileDisplay').src = img;
+        const now = new Date(); document.getElementById('globalMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        document.getElementById('fDate').value = now.toISOString().split('T')[0]; renderAll();
+    });
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
