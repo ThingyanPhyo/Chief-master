@@ -4,12 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>EXTECH Master - Chief V22.4 (K-Plus Edition)</title>
-<link rel="manifest" href="manifest.json">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Chief Master">
-<meta name="theme-color" content="#0f172a">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
 <style>
     :root { --ex-blue: #0056b3; --ex-dark: #0f172a; --ex-green: #10b981; --ex-red: #ef4444; --kp-green: #2fb35d; }
@@ -124,6 +118,153 @@
                     <label style="position:absolute; bottom:0; right:0; background:var(--ex-blue); color:white; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid white; font-size:12px;">📷<input type="file" hidden onchange="uploadPhoto(this)"></label>
                 </div>
                 <div class="profile-name">MR. THINGYAN PHYO</div>
+                <div style="display:inline-block; margin-top:8px; background:rgba(0, 86, 179, 0.08); color:var(--ex-blue); padding:5px 15px; border-radius:50px; font-size:0.75rem; font-weight:800; text-transform:uppercase;">Chief Parameter</div>
+            </div>
+
+            <div class="stat-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:0.7rem; font-weight:700; color:#64748b;">၂၀ ရက်နေ့ ထုတ်လစာ (၁-၁၅)</div>
+                    <button class="eye-btn" onclick="toggleDashboardPriv('s1Total')">👁️</button>
+                </div>
+                <div class="stat-val" id="s1Total" data-val="0">••••••</div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-top:8px;"><span id="s1Days">0 ရက်</span><span id="s1Sun" style="color:var(--ex-red)">0 ပိတ်ရက်</span></div>
+            </div>
+
+            <div class="stat-card" style="border-left-color:var(--ex-green);">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <div style="font-size:0.7rem; font-weight:700; color:#64748b;">၅ ရက်နေ့ စုစုပေါင်း (Net Pay)</div>
+                            <button class="eye-btn" onclick="toggleDashboardPriv('s2Total')">👁️</button>
+                        </div>
+                        <div class="stat-val" id="s2Total" data-val="0" style="color:var(--ex-green);">••••••</div>
+                    </div>
+                    <div><label style="font-size:0.6rem; font-weight:800; color:var(--ex-red);">လူမှုဖူလုံရေး</label><br>
+                    <input type="number" id="ssValue" class="ss-input" placeholder="0" oninput="saveSSMonthly()"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:0.8rem; margin-top:8px;"><span id="s2Gross">Gross: 0 ฿</span><span id="s2SunWorked">Worked Sun: 0 ရက်</span></div>
+            </div>
+        </div>
+
+        <div id="add" class="tab-content">
+            <div class="card">
+                <div class="field" style="margin-bottom:12px;"><label>ရက်စွဲ</label><input type="date" id="fDate"></div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                    <div class="field"><label>နေ့တွက်နှုန်း</label><input type="number" id="rateNormal" value="372"></div>
+                    <div class="field"><label>အိုတီနှုန်း</label><input type="number" id="rateOT" value="69"></div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
+                    <div class="field"><label>IN</label><input type="time" id="fIn" value="08:00"></div>
+                    <div class="field"><label>OUT</label><input type="time" id="fOut" value="17:00"></div>
+                    <div class="field"><label>OT OUT</label><input type="time" id="fOtOut" value="20:00"></div>
+                </div>
+                <div class="field" style="margin-bottom:15px;"><label>မှတ်စု (Note)</label><input type="text" id="fNote" placeholder="ဥပမာ- အစိုးရရုံးပိတ်ရက်"></div>
+                <button class="btn-save" id="saveBtn" onclick="saveRecord()">SAVE DATA</button>
+            </div>
+            <div class="card">
+                <h3 style="font-size:0.8rem; color:var(--ex-blue); margin-bottom:10px;">DAILY DATA RECORDS</h3>
+                <div class="table-container"><table><thead><tr><th>DATE</th><th>SHF</th><th>OT</th><th>PAY</th><th style="text-align:right;">ACT</th></tr></thead><tbody id="quickBody"></tbody></table></div>
+            </div>
+        </div>
+
+        <div id="history" class="tab-content">
+            <h3 style="font-weight:800; color:var(--ex-dark); margin-bottom:15px; font-size:1rem;">📅 Monthly History Archive</h3>
+            <div id="historyList"></div>
+        </div>
+
+        <div id="settings" class="tab-content">
+            <div class="card">
+                <h3 style="margin-bottom:15px; font-size:1rem;">Change PIN Security</h3>
+                <div class="field"><label>PIN အဟောင်း ထည့်ပါ</label><input type="password" id="oldPinInput" maxlength="6"></div>
+                <div class="field"><label>PIN အသစ် ထည့်ပါ (၆ လုံး)</label><input type="password" id="newPinInput" maxlength="6"></div>
+                <button class="btn-save" onclick="updatePin()" style="background:var(--ex-dark);">UPDATE PIN</button>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const MASTER_KEY = 'EXTECH_CHIEF_V21_MASTER';
+    const SS_KEY = 'EXTECH_CHIEF_SS_V21';
+    const PIN_KEY = 'EXTECH_CHIEF_PIN_LOCK';
+    let db = JSON.parse(localStorage.getItem(MASTER_KEY)) || [];
+    let ssDb = JSON.parse(localStorage.getItem(SS_KEY)) || {};
+    let currentPin = localStorage.getItem(PIN_KEY) || "123456";
+    let inputPin = "";
+
+    function pressKey(num) {
+        if(num === 'DEL') inputPin = inputPin.slice(0, -1);
+        else if(inputPin.length < 6) inputPin += num;
+        const dots = document.querySelectorAll('.dot');
+        dots.forEach((dot, i) => i < inputPin.length ? dot.classList.add('active') : dot.classList.remove('active'));
+        if(inputPin.length === 6) {
+            if(inputPin === currentPin) { document.getElementById('lockScreen').style.display = 'none'; } 
+            else { alert("PIN မှားနေပါတယ် Chief!"); inputPin = ""; dots.forEach(d => d.classList.remove('active')); }
+        }
+    }
+    function forgetPin() { if(confirm("PIN Reset လုပ်ရန် Backup ဖိုင်ကို Restore လုပ်ပေးရပါမယ်။ ဆက်လုပ်မလား Chief?")) { importData(); } }
+    function updatePin() {
+        const op = document.getElementById('oldPinInput').value;
+        const np = document.getElementById('newPinInput').value;
+        if(op !== currentPin) return alert("PIN အဟောင်း မှားနေပါတယ်!");
+        if(np.length !== 6) return alert("PIN အသစ် ၆ လုံး ထည့်ပေးပါ!");
+        currentPin = np; localStorage.setItem(PIN_KEY, np); alert("PIN ပြောင်းလဲမှု အောင်မြင်ပါတယ်!"); location.reload();
+    }
+    function toggleDashboardPriv(id) {
+        const el = document.getElementById(id);
+        const actualVal = el.getAttribute('data-val');
+        if(el.innerText.includes('•')) { el.innerText = actualVal + " ฿"; } 
+        else { el.innerText = "••••••"; }
+    }
+
+    function toggleMenu() { document.getElementById('sidebar').classList.toggle('active'); document.getElementById('overlay').classList.toggle('active'); }
+    function switchTab(id, el) { document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.getElementById(id).classList.add('active'); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); if(el) el.classList.add('active'); toggleMenu(); }
+
+    function saveSSMonthly() {
+        const month = document.getElementById('globalMonth').value;
+        const val = parseFloat(document.getElementById('ssValue').value) || 0;
+        ssDb[month] = val; localStorage.setItem(SS_KEY, JSON.stringify(ssDb)); renderAll();
+    }
+
+    function saveRecord() {
+        const date = document.getElementById('fDate').value; if(!date) return;
+        const rNormal = 372, rOT = 69;
+        const tIn = document.getElementById('fIn').value, tOut = document.getElementById('fOut').value, tOtOut = document.getElementById('fOtOut').value;
+        const note = document.getElementById('fNote').value || "";
+        const isSun = new Date(date).getDay() === 0;
+        let otH = 0;
+        if(tOtOut && tOtOut !== "00:00") {
+            const os = new Date(`2026-01-01 ${tOut}`); let oe = new Date(`2026-01-01 ${tOtOut}`);
+            if(oe < os) oe.setDate(oe.getDate() + 1); otH = (oe - os) / 3600000;
+        }
+        let shiftIcon = "🌙"; if(tIn) { const h = parseInt(tIn.split(':')[0]); if(h >= 6 && h <= 12) shiftIcon = "☀️"; }
+        let pay = isSun ? (rNormal * 2) : (note.includes("အစိုးရရုံးပိတ်ရက်") ? rNormal : (rNormal + (otH * rOT)));
+        if(!tIn || tIn === "00:00") pay = note.includes("အစိုးရရုံးပိတ်ရက်") ? rNormal : 0;
+        const newData = { date, shift: shiftIcon, otH: isSun ? 0 : otH, pay, note, isSun };
+        const existingIdx = db.findIndex(r => r.date === date);
+        if(existingIdx > -1) db[existingIdx] = newData; else db.push(newData);
+        localStorage.setItem(MASTER_KEY, JSON.stringify(db)); renderAll();
+        const btn = document.getElementById('saveBtn'); btn.innerText = "✅ SAVED"; setTimeout(() => btn.innerText = "SAVE DATA", 1000);
+    }
+
+    function renderAll() {
+        const selMonth = document.getElementById('globalMonth').value;
+        const rNormal = 372; const ssDeduct = ssDb[selMonth] || 0;
+        document.getElementById('ssValue').value = ssDeduct === 0 ? '' : ssDeduct;
+        const [y, m] = selMonth.split('-').map(Number);
+        const filtered = db.filter(r => r.date.startsWith(selMonth));
+        let s1WD = 0, s1Sun = 0; for(let d=1; d<=15; d++) { if(new Date(y, m-1, d).getDay() === 0) s1Sun++; else s1WD++; }
+        document.getElementById('s1Total').setAttribute('data-val', (s1WD * rNormal).toLocaleString());
+        document.getElementById('s1Days').innerText = s1WD + " ရက်";
+        document.getElementById('s1Sun').innerText = s1Sun + " ပိတ်ရက်";
+        let s2NM = 0, lastD = new Date(y, m, 0).getDate(); for(let d=16; d<=lastD; d++) if(new Date(y, m-1, d).getDay() !== 0) s2NM += rNormal;
+        let s2OB = 0, workedSun = 0;
+        filtered.forEach(rec => { if(rec.isSun) { if(rec.pay > 0) workedSun++; s2OB += rec.pay; } else if(rec.note.includes("အစိုးရရုံးပိတ်ရက်")) { if(parseInt(rec.date.split('-')[2]) <= 15) s2OB += rec.pay; } else s2OB += (rec.pay - rNormal); });
+        document.getElementById('s2Total').setAttribute('data-val', (s2NM + s2OB - ssDeduct).toLocaleString());
+        document.getElementById('s2Gross').innerText = `Gross: ${Math.round(s2NM + s2OB).toLocaleString()} ฿`;
+        document.getElementById('s2SunWorked').innerText = `Worked Sun: ${workedSun} ရက်`;
+        const qBody = document.getElementById('quickBody'); qBody.innerHTML = '';
+        filtered.sort((a,b) => new Date(a.date) - new Date(b.date)).forEach(r => { qBody.innerHTML += file-name">MR. THINGYAN PHYO</div>
                 <div style="display:inline-block; margin-top:8px; background:rgba(0, 86, 179, 0.08); color:var(--ex-blue); padding:5px 15px; border-radius:50px; font-size:0.75rem; font-weight:800; text-transform:uppercase;">Chief Parameter</div>
             </div>
 
